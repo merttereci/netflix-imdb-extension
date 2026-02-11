@@ -31,7 +31,7 @@ Netflix Sayfasi          Chrome Extension            Backend API
 | Faz 3: Backend API | FastAPI, SQLAlchemy, Turkce baslik destegi, arama | Tamamlandi |
 | Faz 4: Chrome Extension | Content script, MutationObserver, modal rating badge | Tamamlandi |
 | Faz 5: Cache & Performans | Redis (Upstash), Cache-Aside pattern, debounce, multi-level cache | Tamamlandi |
-| Faz 6: Deployment | CI/CD, production deploy | Bekliyor |
+| Faz 6: Deployment | CI/CD, production deploy | Tamamlandi |
 | Faz 7: Anasayfa Kartlari | Batch API, IntersectionObserver, kart badge overlay | Tamamlandi |
 
 ## Teknoloji Stack

@@ -258,8 +258,11 @@ def get_batch_ratings(
         if cached:
             results[title.lower()] = cached
             found += 1
+            # Debug icin detayli log
+            print(f"[Batch Cache] HIT: {title}")
         else:
             uncached_titles.append(title)
+            print(f"[Batch Cache] MISS: {title}")
     
     # 2. Adim: Cache'te olmayanlari DB'den cek
     for title in uncached_titles:
