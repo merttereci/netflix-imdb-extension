@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment (sifreler)
+.env
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files
+*.tsv
+*.tsv.gz
+
+# AI asistan dosyalari (GitHub'da gorunmesin)
+AI_TALIMAT.md
+OGRENME_NOTLARI.md
+READMEPROTOTIP.md
+.agent/
+.gemini/

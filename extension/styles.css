@@ -1,0 +1,97 @@
+/**
+ * Netflix IMDB Extension - Stiller
+ * 
+ * OGRENME NOTU - CSS Isolation:
+ * Content script CSS'i Netflix'in CSS'i ile karisabilir.
+ * Bu yuzden cok spesifik class isimleri kullaniyoruz (imdb- prefix).
+ */
+
+/* IMDB Rating Badge */
+.imdb-rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #1a1a1a;
+    border: 1px solid #f5c518;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 10px 0;
+    font-family: Arial, sans-serif;
+    z-index: 9999;
+}
+
+/* IMDb Logo */
+.imdb-rating-badge .imdb-logo {
+    background-color: #f5c518;
+    color: #000;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+/* Rating Score */
+.imdb-rating-badge .imdb-score {
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Fixed position variant (body'ye eklendiginde) */
+body > .imdb-rating-badge {
+    position: fixed;
+    top: 100px;
+    right: 50px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   ANASAYFA KART BADGE
+   
+   OGRENME NOTU - Position: Absolute/Relative:
+   Parent (boxart-container) position:relative olmali,
+   badge position:absolute ile parent'in icinde konumlanir.
+   top/right ile sag ust koseye yerlestiriyoruz.
+   ============================================ */
+
+/* Kart poster alani - badge icin referans noktasi */
+.boxart-container {
+    position: relative !important;
+}
+
+/* Kart uzerindeki kucuk IMDB badge */
+.imdb-card-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid #f5c518;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: Arial, sans-serif;
+    z-index: 10;
+    pointer-events: none;  /* Kartla etkilesimi engelleme */
+    transition: opacity 0.3s ease;
+}
+
+/* Kart badge - IMDb logo (kucuk versiyon) */
+.imdb-card-badge .imdb-card-logo {
+    background-color: #f5c518;
+    color: #000;
+    font-weight: bold;
+    font-size: 8px;
+    padding: 1px 3px;
+    border-radius: 2px;
+    line-height: 1;
+}
+
+/* Kart badge - Rating skor */
+.imdb-card-badge .imdb-card-score {
+    color: #fff;
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 1;
+}
