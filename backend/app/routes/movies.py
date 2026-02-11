@@ -25,7 +25,7 @@ from app.models.movie_title import MovieTitle
 from app.schemas import MovieRating, MovieSearch, ErrorResponse, BatchRatingRequest, BatchRatingResponse
 from app.utils.turkish import normalize_turkish, turkish_contains
 from app.utils.cache import (
-    cache_get, cache_set,
+    cache_get, cache_set, cache_get_multi,
     make_rating_key, make_movie_key, make_search_key
 )
 
@@ -251,14 +251,18 @@ def get_batch_ratings(
     not_found = 0
     uncached_titles = []  # Cache'te olmayanlar
     
-    # 1. Adim: Her baslik icin once cache'e bak
-    for title in request.titles:
-        cache_key = make_rating_key(title)
-        cached = cache_get(cache_key)
-        if cached:
-            results[title.lower()] = cached
+    # 1. Adim: Once hizlica MGET ile cache'e bak (Bulk Optimization)
+    cache_keys = [make_rating_key(t) for t in request.titles]
+    # Key -> Title mapping (Cevaplari eslestirmek icin)
+    key_to_title = {k: t for k, t in zip(cache_keys, request.titles)}
+    
+    # Tek seferde Redis'e sor (20x hizlanma potansiyeli)
+    cached_results = cache_get_multi(cache_keys)
+    
+    for key, title in key_to_title.items():
+        if key in cached_results:
+            results[title.lower()] = cached_results[key]
             found += 1
-            # Debug icin detayli log
             print(f"[Batch Cache] HIT: {title}")
         else:
             uncached_titles.append(title)

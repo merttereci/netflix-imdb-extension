@@ -82,6 +82,48 @@ def cache_get(key: str) -> Optional[Any]:
         return None
 
 
+def cache_get_multi(keys: list[str]) -> dict[str, Any]:
+    """
+    Birden fazla key icin cache'ten veri oku (MGET).
+    
+    OGRENME NOTU - Batch Optimization:
+    - 20 tane GET istegi atmak yerine 1 tane MGET atariz.
+    - Network round-trip suresini 20 kat iyilestirir (teorik olarak).
+    - Redis single-threaded oldugu icin, cok sayida kucuk komut gondermek yerine
+      tek buyuk komut gondermek throughput'u (islem kapasitesi) arttirir.
+    
+    Returns:
+        Bulunan kayitlarin dict hali: {key: value}
+    """
+    client = get_redis_client()
+    if not client or not keys:
+        return {}
+    
+    try:
+        # Redis MGET: Tek seferde n tane key sor
+        values = client.mget(keys)
+        
+        results = {}
+        hits = 0
+        misses = 0
+        
+        for key, value in zip(keys, values):
+            if value:
+                results[key] = json.loads(value)
+                hits += 1
+            else:
+                misses += 1
+        
+        _cache_stats["hits"] += hits
+        _cache_stats["misses"] += misses
+        
+        return results
+        
+    except Exception as e:
+        print(f"[Cache] MGET hatasi: {e}")
+        return {}
+
+
 def cache_set(key: str, value: Any, ttl: Optional[int] = None) -> bool:
     """
     Cache'e veri yaz.
