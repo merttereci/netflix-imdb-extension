@@ -10,7 +10,7 @@
   
   "host_permissions": [
     "https://www.netflix.com/*",
-    "http://127.0.0.1:8006/*"
+    "https://api-production-d6dc.up.railway.app/*"
   ],
   
   "background": {
