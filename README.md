@@ -153,39 +153,19 @@ extension/
 │   ├── import_imdb.py          # IMDB dataset -> PostgreSQL pipeline
 │   └── test_db.py              # Veritabani test scripti
 ├── docs/
-│   ├── adr/                    # Architecture Decision Records (9 adet)
+│   ├── adr/                    # Architecture Decision Records (10 adet)
 │   ├── FAZ1_OGRENME.md         # Faz ogrenme dokumanlari
 │   ├── FAZ2_OGRENME.md
 │   ├── FAZ3_OGRENME.md
 │   ├── FAZ4_OGRENME.md
 │   ├── FAZ5_OGRENME.md
+│   ├── FAZ6_OGRENME.md
 │   └── FAZ7_OGRENME.md
 └── README.MD                   # Proje dokumantasyonu
 ```
 
 ## Kurulum
 
-### Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-
-# .env dosyasi olustur
-cp .env.example .env
-# DATABASE_URL ve REDIS_URL'i guncelle
-
-# Sunucuyu baslat
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8006 --reload
-```
-
-### Chrome Extension
-
-1. Chrome'da `chrome://extensions` adresine git
-2. "Gelistirici modu" nu ac (sag ust kose)
-3. "Paketlenmemis oge yukle" tikla
-4. `extension/extension/` klasorunu sec
-5. Netflix'e git, filmlerin uzerinde IMDB badge'lerini gor
 
 ## Mimari Kararlar (ADR)
 
@@ -200,6 +180,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8006 --reload
 | ADR-007 | Arama optimizasyonu (normalize + exact match oncelikli) |
 | ADR-008 | Netflix kart ve cache stratejisi |
 | ADR-009 | Batch API ve IntersectionObserver stratejisi |
+| ADR-010 | Railway deployment karari ve env yonetimi |
 
 ## Ogrenme Konulari
 
@@ -207,7 +188,8 @@ Bu proje kapsaminda ogrenilenler:
 
 - **Backend:** REST API tasarimi, FastAPI, SQLAlchemy ORM, Pydantic validation
 - **Database:** PostgreSQL, Supabase, migration, normalizasyon
-- **Cache:** Redis, Cache-Aside pattern, TTL, multi-level cache
+- **Cache:** Redis, Cache-Aside pattern, TTL, multi-level cache, MGET optimizasyonu
+- **Deployment:** Railway, Environment Variables, Procfile, CI/CD
 - **Chrome Extension:** Manifest V3, content/background script, messaging API
 - **Web API'ler:** IntersectionObserver, MutationObserver, DOM manipulation
 - **Performans:** Debounce, batch processing, N+1 problem cozumu
