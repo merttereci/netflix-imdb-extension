@@ -5,7 +5,7 @@
  * API baglantisini kontrol eder ve durumu gosterir.
  */
 
-const API_BASE_URL = 'https://api-production-d6dc.up.railway.app';
+const API_BASE_URL = 'https://netflix-imdb-extension.vercel.app';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const statusDot = document.getElementById('statusDot');

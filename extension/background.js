@@ -22,7 +22,7 @@
  */
 
 // API Base URL - Test icin localhost, production'da degisecek
-const API_BASE_URL = 'https://api-production-d6dc.up.railway.app';
+const API_BASE_URL = 'https://netflix-imdb-extension.vercel.app';
 
 /**
  * In-Memory Rating Cache
