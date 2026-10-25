@@ -218,20 +218,6 @@ function setupObserver() {
     console.log('[Content] MutationObserver aktif (debounce: 300ms)');
 }
 
-// Sayfa yuklendikten sonra observer'i baslat
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setupObserver();
-        setupCardObserver();
-    });
-} else {
-    setupObserver();
-    setupCardObserver();
-}
-
-// DEBUG: Netflix'in guncel DOM yapisini logla
-console.log('[Content] DEBUG - Sayfa URL:', window.location.href);
-
 // ============================================
 // ANASAYFA KART RATING SISTEMI
 //
@@ -248,20 +234,34 @@ console.log('[Content] DEBUG - Sayfa URL:', window.location.href);
 // ============================================
 
 const CARD_BADGE_CLASS = 'imdb-card-badge';
-const processedCards = new Set();  // Zaten islenmis kartlari takip et
+const CARD_HOST_CLASS = 'imdb-card-host';  // Badge'in konumlandigi poster alani
+
+// Kart selector'lari
+// NOT (Ekim 2026): Netflix eski class'lari (.slider-item, .boxart-container) kaldirdi,
+// yerine hash'li CSS-in-JS class'lari geldi. Sabit kalan data-uia attribute'larini kullaniyoruz.
+// Yeni yapi: <a aria-label="Film Adi" data-uia="standard-card"><div><div><img></div></div></a>
+const CARD_SELECTOR = '[data-uia="standard-card"], [data-uia="ranked-card"], .slider-item';
+
+// Islenmis kartlar - baslik degil element bazli tutuyoruz,
+// boylece ayni film farkli satirlarda tekrar gorundugunde her kartina badge eklenir.
+// WeakSet: Netflix kart elementini DOM'dan silince otomatik temizlenir (memory leak yok)
+const processedCards = new WeakSet();
 let batchTimer = null;  // Batch debounce timer
-let pendingTitles = new Map();  // Baslik -> kart element eslemesi
+let pendingTitles = new Map();  // Baslik -> [kart elementleri] eslemesi
 
 /**
  * Kart'tan baslik cikarir
- * Netflix kartlarinda baslik: a[aria-label] veya p.fallback-text
- * 
- * @param {Element} cardElement - .slider-item elementi
+ * Netflix kartlarinda baslik: kartin kendi aria-label'i, ic a[aria-label] veya p.fallback-text
+ *
+ * @param {Element} cardElement - Kart elementi (CARD_SELECTOR)
  * @returns {string|null} Film/dizi basligi
  */
 function extractTitleFromCard(cardElement) {
     // 1. aria-label (en guvenilir - erisilebilirlik standardi)
-    const link = cardElement.querySelector('a[aria-label]');
+    // Yeni Netflix'te kartin kendisi <a aria-label="..."> elementi
+    const link = cardElement.matches('[aria-label]')
+        ? cardElement
+        : cardElement.querySelector('a[aria-label]');
     if (link) {
         const label = link.getAttribute('aria-label');
         if (label && label.trim()) return label.trim();
@@ -279,18 +279,20 @@ function extractTitleFromCard(cardElement) {
 /**
  * Tek bir karta IMDB badge ekler
  * 
- * @param {Element} cardElement - .slider-item elementi
+ * @param {Element} cardElement - Kart elementi (CARD_SELECTOR)
  * @param {number|null} rating - IMDB puani
  */
 function addCardBadge(cardElement, rating) {
     if (!rating) return;
-    
+
     // Badge zaten var mi?
     if (cardElement.querySelector(`.${CARD_BADGE_CLASS}`)) return;
-    
-    // Poster container'i bul
-    const boxart = cardElement.querySelector('.boxart-container');
+
+    // Poster container'i bul (eski yapi: .boxart-container, yeni yapi: img'nin parent'i)
+    const boxart = cardElement.querySelector('.boxart-container')
+        || cardElement.querySelector('img')?.parentElement;
     if (!boxart) return;
+    boxart.classList.add(CARD_HOST_CLASS);
     
     // Badge olustur
     const badge = document.createElement('div');
@@ -331,11 +333,11 @@ function flushPendingBatch() {
             }
             
             if (response && response.success && response.data) {
-                // Her karta badge ekle
-                for (const [title, cardElement] of currentBatch.entries()) {
+                // Her karta badge ekle (ayni baslik birden fazla kartta olabilir)
+                for (const [title, cardElements] of currentBatch.entries()) {
                     const ratingData = response.data[title.toLowerCase()];
                     if (ratingData && ratingData.rating) {
-                        addCardBadge(cardElement, ratingData.rating);
+                        cardElements.forEach(card => addCardBadge(card, ratingData.rating));
                     }
                 }
                 
@@ -352,16 +354,16 @@ function flushPendingBatch() {
  * @param {Element} cardElement - Gorunen kart elementi
  */
 function queueCard(cardElement) {
+    // Zaten islenmis mi?
+    if (processedCards.has(cardElement)) return;
+
     const title = extractTitleFromCard(cardElement);
     if (!title) return;
-    
-    // Zaten islenmis mi?
-    const cardId = cardElement.querySelector('.title-card')?.id || title;
-    if (processedCards.has(cardId)) return;
-    processedCards.add(cardId);
-    
+    processedCards.add(cardElement);
+
     // Batch kuyruklarina ekle
-    pendingTitles.set(title, cardElement);
+    if (!pendingTitles.has(title)) pendingTitles.set(title, []);
+    pendingTitles.get(title).push(cardElement);
     
     // Debounce: 300ms icinde baska kart gelmezse batch gonder
     if (batchTimer) clearTimeout(batchTimer);
@@ -402,12 +404,11 @@ function setupCardObserver() {
     
     // Mevcut kartlari izlemeye al
     function observeExistingCards() {
-        const cards = document.querySelectorAll('.slider-item');
+        const cards = document.querySelectorAll(CARD_SELECTOR);
         cards.forEach(card => {
             // Zaten islenmis mi kontrol et
-            const cardId = card.querySelector('.title-card')?.id;
-            if (cardId && processedCards.has(cardId)) return;
-            
+            if (processedCards.has(card)) return;
+
             observer.observe(card);
         });
     }
@@ -423,8 +424,8 @@ function setupCardObserver() {
             if (mutation.addedNodes.length > 0) {
                 for (const node of mutation.addedNodes) {
                     if (node.nodeType === 1 && (
-                        node.classList?.contains('slider-item') ||
-                        node.querySelector?.('.slider-item')
+                        node.matches?.(CARD_SELECTOR) ||
+                        node.querySelector?.(CARD_SELECTOR)
                     )) {
                         hasNewCards = true;
                         break;
@@ -447,3 +448,19 @@ function setupCardObserver() {
     
     console.log('[Content] Kart IntersectionObserver aktif');
 }
+
+// Sayfa yuklendikten sonra observer'lari baslat
+// NOT: Dosyanin sonunda olmali - yukaridaki const'lar (CARD_SELECTOR vb.)
+// tanimlanmadan cagrilirsa "Cannot access before initialization" hatasi alinir
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setupObserver();
+        setupCardObserver();
+    });
+} else {
+    setupObserver();
+    setupCardObserver();
+}
+
+// DEBUG: Netflix'in guncel DOM yapisini logla
+console.log('[Content] DEBUG - Sayfa URL:', window.location.href);

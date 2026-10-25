@@ -13,6 +13,7 @@ MULAKATTA SORULUR:
 
 import redis
 import logging
+import time
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 # Global Redis client - None ise cache devre disi
 _redis_client = None
+
+# Son baglanti denemesinin zamani - basarisiz denemeden sonra her istekte
+# 5 sn timeout beklememek icin en fazla RETRY_INTERVAL'da bir tekrar deniyoruz
+_last_attempt = None  # None: hic denenmedi
+RETRY_INTERVAL = 60  # saniye
 
 
 def init_redis():
@@ -38,8 +44,9 @@ def init_redis():
     Upstash kendi sertifikasini yonetir, bu yuzden ssl_cert_reqs="none" 
     ayarini eklememiz gerekiyor. Aksi halde baglanti basarisiz olur.
     """
-    global _redis_client
-    
+    global _redis_client, _last_attempt
+    _last_attempt = time.monotonic()
+
     if not settings.cache_enabled:
         logger.info("Cache devre disi (CACHE_ENABLED=false)")
         return None
@@ -69,5 +76,13 @@ def get_redis_client():
     """
     Redis client singleton dondur.
     None donerse cache kullanilmayacak.
+
+    OGRENME NOTU - Lazy Init (Serverless):
+    Vercel gibi serverless ortamlarda startup event'i guvenilir sekilde
+    calismayabilir ya da o anki tek bir baglanti hatasi instance omru boyunca
+    cache'i kapali birakir. Bu yuzden client yoksa ilk istekte baglanmayi deniyoruz.
     """
+    if _redis_client is None and settings.cache_enabled and (
+            _last_attempt is None or time.monotonic() - _last_attempt > RETRY_INTERVAL):
+        init_redis()
     return _redis_client

@@ -55,7 +55,8 @@ body > .imdb-rating-badge {
    ============================================ */
 
 /* Kart poster alani - badge icin referans noktasi */
-.boxart-container {
+.boxart-container,
+.imdb-card-host {
     position: relative !important;
 }
 
