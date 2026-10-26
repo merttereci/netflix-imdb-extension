@@ -25,6 +25,11 @@ Her ADR su bolumlerden olusur:
 | [ADR-004](ADR-004-imdb-dataset.md) | IMDB Dataset Kullanimi | Kabul Edildi |
 | [ADR-005](ADR-005-monorepo-yaklasimi.md) | Monorepo Yaklasimi | Kabul Edildi |
 | [ADR-006](ADR-006-lokalize-baslik-destegi.md) | Lokalize Baslik Destegi | Kabul Edildi |
+| [ADR-007](ADR-007-arama-optimizasyonu.md) | Arama Performansi ve Turkce Karakter Optimizasyonu | Kabul Edildi |
+| [ADR-008](ADR-008-netflix-kart-ve-cache-stratejisi.md) | Netflix Kart Gorunumu ve Cache Stratejisi | Kabul Edildi |
+| [ADR-009](ADR-009-batch-api-kart-stratejisi.md) | Batch API ve Anasayfa Kart Stratejisi | Kabul Edildi |
+| [ADR-010](ADR-010-railway-deployment.md) | Railway Hosting ve Deployment Stratejisi | Kabul Edildi (ADR-011 ile degistirildi) |
+| [ADR-011](ADR-011-vercel-deployment.md) | Railway'den Vercel'e Gecis | Kabul Edildi |
 
 ## Yeni ADR Ekleme
 
