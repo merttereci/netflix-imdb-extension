@@ -21,8 +21,17 @@
  * CSP (Content Security Policy) engellerini bu sekilde asiyoruz.
  */
 
-// API Base URL - Test icin localhost, production'da degisecek
-const API_BASE_URL = 'https://netflix-imdb-extension.vercel.app';
+// API adresi ve anahtari config.js'den gelir (repoda yok, bkz. config.example.js)
+// Dosya yoksa importScripts hata firlatir; yakalamazsak service worker hic baslamaz.
+try {
+    importScripts('config.js');
+} catch (error) {
+    console.error('[Background] config.js yuklenemedi. config.example.js dosyasini config.js olarak kopyalayip doldurun.');
+}
+
+const CONFIG = self.EXTENSION_CONFIG || {};
+const API_BASE_URL = CONFIG.API_BASE_URL;
+const API_KEY = CONFIG.API_KEY;
 
 /**
  * In-Memory Rating Cache
@@ -151,20 +160,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
+ * API'ye X-API-Key header'i ile istek atar
+ * 
+ * config.js eksikse ya da anahtar gecersizse (401) anlasilir bir hata firlatir,
+ * boylece sorun konsolda "film bulunamadi" gibi gorunmez.
+ * 
+ * @param {string} path - Ornek: /api/rating?title=Inception
+ * @param {Object} options - fetch secenekleri
+ */
+async function apiFetch(path, options = {}) {
+    if (!API_BASE_URL || !API_KEY) {
+        throw new Error('config.js eksik: API adresi veya anahtari tanimli degil');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: { ...options.headers, 'X-API-Key': API_KEY }
+    });
+    
+    if (response.status === 401) {
+        throw new Error('API anahtari gecersiz (401)');
+    }
+    
+    return response;
+}
+
+/**
  * API'den rating bilgisini ceker
  * @param {string} title - Film/dizi basligi
  * @param {number|null} year - Yapim yili (opsiyonel)
  */
 async function fetchRating(title, year = null) {
-    let url = `${API_BASE_URL}/api/rating?title=${encodeURIComponent(title)}`;
+    let path = `/api/rating?title=${encodeURIComponent(title)}`;
     
     if (year) {
-        url += `&year=${year}`;
+        path += `&year=${year}`;
     }
     
-    console.log('[Background] API istegi:', url);
+    console.log('[Background] API istegi:', path);
     
-    const response = await fetch(url);
+    const response = await apiFetch(path);
     
     if (!response.ok) {
         throw new Error(`Film bulunamadi: ${title}`);
@@ -194,11 +229,9 @@ async function fetchRating(title, year = null) {
  * @returns {Object} { "title": {rating data}, ... }
  */
 async function fetchBatchRatings(titles) {
-    const url = `${API_BASE_URL}/api/ratings/batch`;
-    
     console.log('[Background] Batch API istegi:', titles.length, 'baslik');
     
-    const response = await fetch(url, {
+    const response = await apiFetch('/api/ratings/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titles: titles })

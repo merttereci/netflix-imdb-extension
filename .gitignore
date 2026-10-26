@@ -32,5 +32,8 @@ READMEPROTOTIP.md
 # Share instructions
 extension/NASIL_YUKLENIR.txt
 
-# Release paketi (GitHub Releases uzerinden dagitiliyor)
+# Yerel eklenti paketi (dagitilmiyor)
 extension.zip
+
+# Eklenti ayarlari: API adresi ve gercek anahtar (sablon: extension/config.example.js)
+extension/config.js
