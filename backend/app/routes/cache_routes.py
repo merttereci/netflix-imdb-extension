@@ -2,14 +2,12 @@
 Cache Routes - Cache Yonetim Endpoint'leri
 
 OGRENME NOTU:
-Bu endpoint'ler gelistirme ve debug icin kullanilir.
-Production'da /cache/flush gibi tehlikeli endpoint'ler
-authentication ile korunmali veya kapatilmali.
+Bu endpoint'ler gelistirme ve debug icin kullanilir ve sadece okuma yapar.
+Cache'i silen endpoint'ler production'da kimlik dogrulamasiz acik birakilmamali.
 """
 
 from fastapi import APIRouter
 from app.utils.cache import get_cache_stats
-from app.redis import get_redis_client
 
 router = APIRouter()
 
@@ -38,28 +36,3 @@ def cache_stats():
         stats["hit_ratio"] = 0.0
     
     return stats
-
-
-@router.delete(
-    "/cache/flush",
-    summary="Cache temizle (Gelistirme icin)",
-    description="Tum cache'i temizler. DIKKAT: Production'da kullanma!"
-)
-def cache_flush():
-    """
-    Tum cache'i temizle.
-    
-    OGRENME NOTU:
-    flushdb() Redis'teki tum key'leri siler.
-    Bu islem geri alinamaz!
-    Production'da bu endpoint authentication ile korunmali.
-    """
-    client = get_redis_client()
-    if not client:
-        return {"message": "Redis bagli degil", "flushed": False}
-    
-    try:
-        client.flushdb()
-        return {"message": "Cache temizlendi", "flushed": True}
-    except Exception as e:
-        return {"message": f"Hata: {e}", "flushed": False}
