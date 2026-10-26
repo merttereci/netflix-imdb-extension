@@ -10,12 +10,16 @@ ETL (Extract, Transform, Load) pattern'i:
 - Load: Veritabanina yukle
 
 KULLANIM:
-    python scripts/import_imdb.py
+    python scripts/import_imdb.py <imdb_klasoru>
+
+    Klasor arguman olarak verilmezse IMDB_DATA_PATH ortam degiskeni
+    (veya backend/.env icindeki IMDB_DATA_PATH) kullanilir.
 
 GEREKSINIMLER:
     pip install pandas sqlalchemy psycopg2-binary python-dotenv tqdm
 """
 
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -32,7 +36,6 @@ from tqdm import tqdm
 load_dotenv(Path(__file__).parent.parent / "backend" / ".env")
 
 # Konfigurasyon
-IMDB_DATA_PATH = Path("C:/Users/Mert/Downloads/imdb")  # Forward slash kullan
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Filtre ayarlari
@@ -286,8 +289,35 @@ def upload_to_database(engine, movies_df: pd.DataFrame, titles_df: pd.DataFrame)
         print("  [OK] movie_titles yuklendi!")
 
 
+def get_data_path() -> Path:
+    """
+    IMDB dosyalarinin bulundugu klasoru belirle.
+    Oncelik: komut satiri argumani, sonra IMDB_DATA_PATH ortam degiskeni.
+    """
+    parser = argparse.ArgumentParser(description="IMDB dataset'lerini veritabanina yukler")
+    parser.add_argument(
+        "data_path",
+        nargs="?",
+        default=os.getenv("IMDB_DATA_PATH"),
+        help="title.basics, title.ratings ve title.akas .tsv.gz dosyalarinin oldugu klasor "
+             "(varsayilan: IMDB_DATA_PATH ortam degiskeni)"
+    )
+    args = parser.parse_args()
+
+    if not args.data_path:
+        parser.error("Veri klasoru belirtilmedi. Arguman olarak ver veya IMDB_DATA_PATH ayarla.")
+
+    path = Path(args.data_path)
+    if not path.is_dir():
+        parser.error(f"Klasor bulunamadi: {path}")
+
+    return path
+
+
 def main():
     """Ana fonksiyon"""
+    data_path = get_data_path()
+
     print("=" * 60)
     print("IMDB Data Pipeline")
     print("=" * 60)
@@ -298,7 +328,7 @@ def main():
         print("   backend/.env dosyasini kontrol et.")
         sys.exit(1)
     
-    print(f"[CONFIG] Veri klasoru: {IMDB_DATA_PATH}")
+    print(f"[CONFIG] Veri klasoru: {data_path}")
     print(f"[CONFIG] Min votes: {MIN_VOTES}")
     print(f"[CONFIG] Title types: {TITLE_TYPES}")
     print()
@@ -311,8 +341,8 @@ def main():
     print()
     
     # Verileri oku
-    basics = load_and_filter_basics(IMDB_DATA_PATH)
-    ratings = load_ratings(IMDB_DATA_PATH)
+    basics = load_and_filter_basics(data_path)
+    ratings = load_ratings(data_path)
     print()
     
     # Birlestir
@@ -325,7 +355,7 @@ def main():
     
     # Turkce basliklar
     valid_ids = set(movies_df['imdb_id'].tolist())
-    turkish = load_turkish_titles(IMDB_DATA_PATH, valid_ids)
+    turkish = load_turkish_titles(data_path, valid_ids)
     titles_df = prepare_titles_df(turkish) if len(turkish) > 0 else pd.DataFrame()
     print()
     
