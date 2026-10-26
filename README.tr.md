@@ -2,11 +2,9 @@
 
 # Netflix IMDb Rating Extension
 
-<!--
 ![Demo](docs/images/demo.gif)
 
 ![Ekran görüntüsü](docs/images/screenshot.png)
--->
 
 Netflix'te film ve dizi kartlarının üzerine IMDb puanını ekleyen bir Chrome eklentisi. Puanlar, IMDb'nin resmi veri setlerinden oluşturulan bir PostgreSQL veritabanından geliyor. Arada Redis önbelleği olan bir FastAPI servisi var.
 
