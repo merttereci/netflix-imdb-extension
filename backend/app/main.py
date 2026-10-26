@@ -32,7 +32,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Production'da kisitlanmali
-    allow_credentials=True,
+    allow_credentials=False,  # Eklenti cookie/kimlik bilgisi gondermiyor
     allow_methods=["*"],
     allow_headers=["*"],
 )
