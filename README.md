@@ -10,14 +10,9 @@
 
 A Chrome extension that adds IMDb ratings to movie and TV show cards on Netflix. Ratings come from a PostgreSQL database built from IMDb's official datasets, served by a FastAPI service with a Redis cache in front of it.
 
-## Installation
+## Access
 
-1. Download the latest zip from the [Releases](https://github.com/merttereci/netflix-imdb-extension/releases) page and extract it.
-2. Open `chrome://extensions` in Chrome and turn on **Developer mode** (top right).
-3. Click **Load unpacked** and select the folder that contains `manifest.json`.
-4. Open Netflix. Ratings appear on homepage cards and in the detail modal.
-
-The extension talks to the live API, so nothing else needs to be installed.
+The live API is not public. IMDb's data is licensed for non-commercial use only, so every endpoint except the health check requires an API key, and the extension is not distributed. Anyone who wants to run their own copy needs to set up their own backend and download the IMDb datasets themselves.
 
 ## How It Works
 
@@ -151,11 +146,11 @@ Netflix now uses hashed CSS class names on its cards, so the extension relies on
 | GET | `/api/cache/stats` | Cache statistics (hit/miss per instance) |
 | GET | `/api/health` | Health check |
 
-Interactive API docs: `/docs`
+Every endpoint except `/api/health` requires an `X-API-Key` header. Requests without a valid key get a 401. The interactive docs (`/docs`) are turned off, since a browser can't send the key.
 
 ## Deployment
 
-The API runs on Vercel as a Python serverless function in the `lhr1` (London) region. Vercel's Git integration deploys automatically on every push to `main`. `vercel.json` routes all requests to `api/index.py`, which exposes the FastAPI app from `backend/`. Dependencies are installed from the root `requirements.txt`.
+The API runs on Vercel as a Python serverless function in the `lhr1` (London) region. Vercel's Git integration deploys automatically on every push to `main`. `vercel.json` routes all requests to `api/index.py`, which exposes the FastAPI app from `backend/`. Dependencies are installed from the root `requirements.txt`. Valid API keys are kept in the `API_KEYS` environment variable on Vercel as a comma-separated list, so each person gets their own key and a single key can be revoked.
 
 ## Project Structure
 
@@ -174,7 +169,8 @@ netflix-imdb-extension/
 │   │   ├── utils/
 │   │   │   ├── turkish.py      # Turkish character normalization
 │   │   │   └── cache.py        # Redis cache helpers
-│   │   ├── main.py             # FastAPI app, CORS
+│   │   ├── auth.py             # X-API-Key check
+│   │   ├── main.py             # FastAPI app, routes
 │   │   ├── config.py           # Environment variables
 │   │   ├── database.py         # SQLAlchemy connection
 │   │   ├── redis.py            # Redis connection
@@ -183,6 +179,7 @@ netflix-imdb-extension/
 │   └── .env.example
 ├── extension/                  # Chrome extension (Manifest V3)
 │   ├── manifest.json
+│   ├── config.example.js       # Template for config.js (API URL and key)
 │   ├── content.js              # Reads the Netflix DOM, adds badges
 │   ├── background.js           # API requests and in-memory cache
 │   ├── styles.css
@@ -230,6 +227,8 @@ The ADRs are written in Turkish.
 - **Performance:** Debouncing, batching, solving the N+1 problem
 - **Architecture:** Writing ADRs, YAGNI
 
-## License
+## Data and License
 
-This is a personal and educational project. IMDb data comes from IMDb's official datasets.
+This is a personal, non-commercial educational project. IMDb data is used under the terms of IMDb's [non-commercial datasets](https://data.imdb.com/non-commercial-datasets/). The datasets are not included in this repository.
+
+Information courtesy of IMDb (https://www.imdb.com). Used with permission.

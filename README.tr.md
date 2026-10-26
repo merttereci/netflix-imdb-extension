@@ -10,14 +10,9 @@
 
 Netflix'te film ve dizi kartlarının üzerine IMDb puanını ekleyen bir Chrome eklentisi. Puanlar, IMDb'nin resmi veri setlerinden oluşturulan bir PostgreSQL veritabanından geliyor. Arada Redis önbelleği olan bir FastAPI servisi var.
 
-## Kurulum
+## Erişim
 
-1. [Releases](https://github.com/merttereci/netflix-imdb-extension/releases) sayfasından en son sürümün zip dosyasını indir ve bir klasöre çıkar.
-2. Chrome'da `chrome://extensions` adresini aç, sağ üstteki **Geliştirici modu**nu aç.
-3. **Paketlenmemiş öğe yükle**'ye tıkla ve içinde `manifest.json` olan klasörü seç.
-4. Netflix'i aç. Puanlar anasayfadaki kartlarda ve detay penceresinde görünür.
-
-Eklenti canlıdaki API'yi kullanıyor, başka bir şey kurmaya gerek yok.
+Canlı API herkese açık değil. IMDb verisi yalnızca ticari olmayan kullanım için lisanslandığından, sağlık kontrolü dışındaki her endpoint bir API anahtarı istiyor ve eklenti dağıtılmıyor. Kendi kopyasını çalıştırmak isteyenin kendi backend'ini kurması ve IMDb veri setlerini kendisi indirmesi gerekiyor.
 
 ## Nasıl Çalışıyor?
 
@@ -151,11 +146,11 @@ Netflix kartlarda artık hash'li CSS sınıfları kullanıyor. Bu yüzden deği�
 | GET | `/api/cache/stats` | Önbellek istatistikleri (hit/miss instance bazlı) |
 | GET | `/api/health` | Sağlık kontrolü |
 
-Otomatik API dokümantasyonu: `/docs`
+`/api/health` dışındaki her endpoint `X-API-Key` header'ı istiyor, geçerli bir anahtar olmadan gelen istekler 401 alıyor. Tarayıcı anahtarı gönderemediği için otomatik dokümantasyon (`/docs`) kapalı.
 
 ## Deployment
 
-API, Vercel'de `lhr1` (Londra) bölgesinde Python serverless function olarak çalışıyor. Vercel Git entegrasyonu sayesinde `main`'e yapılan her push'ta otomatik deploy ediliyor. `vercel.json` bütün istekleri `api/index.py`'ye yönlendiriyor, bu dosya da `backend/` içindeki FastAPI uygulamasını dışa açıyor. Bağımlılıklar kökteki `requirements.txt`'ten kuruluyor.
+API, Vercel'de `lhr1` (Londra) bölgesinde Python serverless function olarak çalışıyor. Vercel Git entegrasyonu sayesinde `main`'e yapılan her push'ta otomatik deploy ediliyor. `vercel.json` bütün istekleri `api/index.py`'ye yönlendiriyor, bu dosya da `backend/` içindeki FastAPI uygulamasını dışa açıyor. Bağımlılıklar kökteki `requirements.txt`'ten kuruluyor. Geçerli API anahtarları Vercel'de `API_KEYS` ortam değişkeninde virgülle ayrılmış liste olarak duruyor. Böylece her kişiye ayrı anahtar veriliyor ve gerektiğinde tek biri iptal edilebiliyor.
 
 ## Proje Yapısı
 
@@ -174,7 +169,8 @@ netflix-imdb-extension/
 │   │   ├── utils/
 │   │   │   ├── turkish.py      # Türkçe karakter normalizasyonu
 │   │   │   └── cache.py        # Redis önbellek yardımcıları
-│   │   ├── main.py             # FastAPI uygulaması, CORS
+│   │   ├── auth.py             # X-API-Key kontrolü
+│   │   ├── main.py             # FastAPI uygulaması, route'lar
 │   │   ├── config.py           # Ortam değişkenleri
 │   │   ├── database.py         # SQLAlchemy bağlantısı
 │   │   ├── redis.py            # Redis bağlantısı
@@ -183,6 +179,7 @@ netflix-imdb-extension/
 │   └── .env.example
 ├── extension/                  # Chrome eklentisi (Manifest V3)
 │   ├── manifest.json
+│   ├── config.example.js       # config.js şablonu (API adresi ve anahtar)
 │   ├── content.js              # Netflix DOM'unu okur, rozetleri ekler
 │   ├── background.js           # API istekleri ve bellek içi önbellek
 │   ├── styles.css
@@ -228,6 +225,8 @@ netflix-imdb-extension/
 - **Performans:** Debounce, batch istekler, N+1 probleminin çözümü
 - **Mimari:** ADR yazmak, YAGNI
 
-## Lisans
+## Veri ve Lisans
 
-Bu proje kişisel ve eğitim amaçlıdır. IMDb verileri IMDb'nin resmi veri setlerinden alınmıştır.
+Bu, kişisel ve ticari olmayan bir eğitim projesi. IMDb verisi, IMDb'nin [ticari olmayan kullanım için sunduğu veri setlerinin](https://data.imdb.com/non-commercial-datasets/) koşulları altında kullanılıyor. Veri setleri bu repoda yer almıyor.
+
+Information courtesy of IMDb (https://www.imdb.com). Used with permission.
