@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     cache_ttl: int = 3600  # Cache suresi (saniye) - 1 saat
     cache_enabled: bool = True  # Cache acik/kapali
     
+    # API anahtarlari: virgulle ayrilmis liste, her kisiye ayri anahtar
+    # Bos ise /api/health disindaki tum endpoint'ler 401 doner
+    api_keys: str = ""
+    
     # API ayarlari
     api_title: str = "Netflix IMDB Rating API"
     debug: bool = False  # Production'da False, lokalde .env'de DEBUG=true yap
