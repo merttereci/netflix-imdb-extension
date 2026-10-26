@@ -4,8 +4,6 @@
 
 ![Demo](docs/images/demo.gif)
 
-![Screenshot](docs/images/screenshot.png)
-
 A Chrome extension that adds IMDb ratings to movie and TV show cards on Netflix. Ratings come from a PostgreSQL database built from IMDb's official datasets, served by a FastAPI service with a Redis cache in front of it.
 
 ## Access
